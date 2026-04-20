@@ -81,7 +81,10 @@
     "!**/node_modules/**/*.ts",
     "!**/node_modules/**/*.map",
     "!**/node_modules/**/CHANGELOG*",
-    "!**/node_modules/**/.github/**"
+    "!**/node_modules/**/.github/**",
+
+    "!**/node_modules/@sentry-internal/node-cpu-profiler/**",
+    "!**/node_modules/@sentry/profiling-node/**"
   ],
   "asarUnpack": [
     "**/node_modules/ffmpeg-static/**/*",
