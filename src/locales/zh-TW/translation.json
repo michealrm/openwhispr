@@ -1052,7 +1052,12 @@
           "annualEquivalent": "$16.67",
           "includesPrefix": "所有 Pro 功能 +",
           "badge": "最熱門",
-          "features": ["無限會議錄製", "代理模式", "與您的資料對話", "優先支援"],
+          "features": [
+            "無限會議錄製",
+            "代理模式",
+            "與您的資料對話",
+            "優先支援"
+          ],
           "cta": "開始使用",
           "switchToAnnual": "切換為年付"
         },
@@ -2044,7 +2049,8 @@
       "hotkeyToSpeak": "{{hotkey}} 說話",
       "recording": "錄音中...",
       "processing": "處理中...",
-      "clickToSpeak": "點擊開始說話"
+      "clickToSpeak": "點擊開始說話",
+      "copied": "已複製到剪貼簿"
     },
     "buttons": {
       "cancelRecording": "取消錄音",

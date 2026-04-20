@@ -2049,7 +2049,8 @@
       "hotkeyToSpeak": "{{hotkey}} per parlare",
       "recording": "Registrazione...",
       "processing": "Elaborazione...",
-      "clickToSpeak": "Clicca per parlare"
+      "clickToSpeak": "Clicca per parlare",
+      "copied": "Copiato negli appunti"
     },
     "buttons": {
       "cancelRecording": "Annulla registrazione",

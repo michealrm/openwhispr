@@ -2145,7 +2145,8 @@
       "hotkeyToSpeak": "{{hotkey}} to talk",
       "recording": "Recording...",
       "processing": "Processing...",
-      "clickToSpeak": "Click to speak"
+      "clickToSpeak": "Click to speak",
+      "copied": "Copied to clipboard"
     },
     "buttons": {
       "cancelRecording": "Cancel recording",

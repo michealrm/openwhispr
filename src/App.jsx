@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import "./index.css";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { useToast } from "./components/ui/useToast";
 import { LoadingDots } from "./components/ui/LoadingDots";
 import { useHotkey } from "./hooks/useHotkey";
@@ -89,6 +89,9 @@ export default function App() {
 
   const [dragStartPos, setDragStartPos] = useState(null);
   const [hasDragged, setHasDragged] = useState(false);
+  const [doneText, setDoneText] = useState(null);
+  const doneTimerRef = useRef(null);
+  const wasProcessingRef = useRef(false);
 
   // Floating icon auto-hide setting (read from store, synced via IPC)
   const floatingIconAutoHide = useSettingsStore((s) => s.floatingIconAutoHide);
@@ -165,12 +168,12 @@ export default function App() {
   }, [toast, dismiss, t]);
 
   useEffect(() => {
-    if (isCommandMenuOpen || toastCount > 0) {
+    if (isCommandMenuOpen || toastCount > 0 || doneText) {
       setWindowInteractivity(true);
     } else if (!isHovered) {
       setWindowInteractivity(false);
     }
-  }, [isCommandMenuOpen, isHovered, toastCount, setWindowInteractivity]);
+  }, [isCommandMenuOpen, isHovered, toastCount, doneText, setWindowInteractivity]);
 
   useEffect(() => {
     const resizeWindow = () => {
@@ -180,22 +183,35 @@ export default function App() {
         window.electronAPI?.resizeMainWindow?.("WITH_MENU");
       } else if (toastCount > 0) {
         window.electronAPI?.resizeMainWindow?.("WITH_TOAST");
+      } else if (doneText) {
+        window.electronAPI?.resizeMainWindow?.("WITH_DONE");
       } else {
         window.electronAPI?.resizeMainWindow?.("BASE");
       }
     };
     resizeWindow();
-  }, [isCommandMenuOpen, toastCount]);
+  }, [isCommandMenuOpen, toastCount, doneText]);
 
   const handleDictationToggle = React.useCallback(() => {
     setIsCommandMenuOpen(false);
     setWindowInteractivity(false);
   }, [setWindowInteractivity]);
 
-  const { isRecording, isProcessing, toggleListening, cancelRecording, cancelProcessing } =
+  const { isRecording, isProcessing, transcript, toggleListening, cancelRecording, cancelProcessing } =
     useAudioRecording(toast, {
       onToggle: handleDictationToggle,
     });
+
+  useEffect(() => {
+    if (wasProcessingRef.current && !isProcessing && transcript) {
+      clearTimeout(doneTimerRef.current);
+      setDoneText(transcript);
+      doneTimerRef.current = setTimeout(() => setDoneText(null), 3000);
+    }
+    wasProcessingRef.current = isProcessing;
+  }, [isProcessing, transcript]);
+
+  useEffect(() => () => clearTimeout(doneTimerRef.current), []);
 
   // Sync auto-hide from main process — setState directly to avoid IPC echo
   useEffect(() => {
@@ -223,7 +239,7 @@ export default function App() {
   useEffect(() => {
     let hideTimeout;
 
-    if (floatingIconAutoHide && !isRecording && !isProcessing && toastCount === 0) {
+    if (floatingIconAutoHide && !isRecording && !isProcessing && !doneText && toastCount === 0) {
       // Delay briefly so processing can start after recording stops without a flash
       hideTimeout = setTimeout(() => {
         window.electronAPI?.hideWindow?.();
@@ -234,7 +250,7 @@ export default function App() {
 
     prevAutoHideRef.current = floatingIconAutoHide;
     return () => clearTimeout(hideTimeout);
-  }, [isRecording, isProcessing, floatingIconAutoHide, toastCount]);
+  }, [isRecording, isProcessing, floatingIconAutoHide, toastCount, doneText]);
 
   const handleClose = () => {
     window.electronAPI.hideWindow();
@@ -279,11 +295,19 @@ export default function App() {
   const getMicState = () => {
     if (isRecording) return "recording";
     if (isProcessing) return "processing";
+    if (doneText) return "done";
     if (isHovered && !isRecording && !isProcessing) return "hover";
     return "idle";
   };
 
   const micState = getMicState();
+
+  const donePopupAlign =
+    panelStartPosition === "bottom-left" ? "left" : panelStartPosition === "center" ? "center" : "right";
+  const donePopupAlignClass =
+    donePopupAlign === "right" ? "right-0" : donePopupAlign === "left" ? "left-0" : "left-1/2 -translate-x-1/2";
+  const donePopupArrowClass =
+    donePopupAlign === "right" ? "right-3" : donePopupAlign === "left" ? "left-3" : "left-1/2 -translate-x-1/2";
 
   const getMicButtonProps = () => {
     const baseClasses =
@@ -305,6 +329,11 @@ export default function App() {
         return {
           className: `${baseClasses} bg-accent cursor-not-allowed`,
           tooltip: t("app.mic.processing"),
+        };
+      case "done":
+        return {
+          className: `${baseClasses} bg-emerald-500 cursor-pointer`,
+          tooltip: null,
         };
       default:
         return {
@@ -360,8 +389,16 @@ export default function App() {
               />
             </button>
           )}
+          <div className="relative">
+            {doneText && micState === "done" && (
+              <div className={`absolute bottom-full ${donePopupAlignClass} mb-2 px-2 py-1.5 text-[10px] text-popover-foreground bg-popover border border-border rounded-md z-10 shadow-lg w-[180px]`}>
+                <div className="font-semibold mb-0.5">{t("app.mic.copied")}</div>
+                <div className="text-popover-foreground/70 truncate">{doneText}</div>
+                <div className={`absolute top-full ${donePopupArrowClass} w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-popover`}></div>
+              </div>
+            )}
           <Tooltip
-            content={micProps.tooltip}
+            content={micState === "done" ? null : micProps.tooltip}
             align={
               panelStartPosition === "bottom-left"
                 ? "left"
@@ -442,6 +479,8 @@ export default function App() {
                 <LoadingDots />
               ) : micState === "processing" ? (
                 <VoiceWaveIndicator isListening={true} />
+              ) : micState === "done" ? (
+                <Check size={16} className="text-white" strokeWidth={2.5} />
               ) : null}
 
               {/* State indicator ring for recording */}
@@ -455,6 +494,7 @@ export default function App() {
               )}
             </button>
           </Tooltip>
+          </div>
           {isCommandMenuOpen && (
             <div
               ref={commandMenuRef}

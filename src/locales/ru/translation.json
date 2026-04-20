@@ -2049,7 +2049,8 @@
       "hotkeyToSpeak": "{{hotkey}} для записи",
       "recording": "Запись...",
       "processing": "Обработка...",
-      "clickToSpeak": "Нажмите для записи"
+      "clickToSpeak": "Нажмите для записи",
+      "copied": "Скопировано в буфер обмена"
     },
     "buttons": {
       "cancelRecording": "Отменить запись",

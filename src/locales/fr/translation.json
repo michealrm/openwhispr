@@ -2097,7 +2097,8 @@
       "hotkeyToSpeak": "{{hotkey}} pour parler",
       "recording": "Enregistrement...",
       "processing": "Traitement...",
-      "clickToSpeak": "Cliquez pour parler"
+      "clickToSpeak": "Cliquez pour parler",
+      "copied": "Copié dans le presse-papiers"
     },
     "buttons": {
       "cancelRecording": "Annuler l’enregistrement",
