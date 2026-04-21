@@ -1002,6 +1002,10 @@ async function startApp() {
     windowsKeyManager.on("key-down", (_key) => {
       if (!isLiveWindow(windowManager.mainWindow)) return;
 
+      // Capture the currently-focused app PID before we do anything that
+      // might change focus, so paste lands in the right window.
+      if (windowManager.textEditMonitor) windowManager.textEditMonitor.captureTargetPid();
+
       const activationMode = windowManager.getActivationMode();
       if (activationMode === "push") {
         windowManager.startWindowsPushToTalk();
@@ -1101,6 +1105,8 @@ async function startApp() {
 
     linuxKeyManager.on("key-down", (_key) => {
       if (!isLiveWindow(windowManager.mainWindow)) return;
+
+      if (windowManager.textEditMonitor) windowManager.textEditMonitor.captureTargetPid();
 
       const activationMode = windowManager.getActivationMode();
       if (activationMode === "push") {

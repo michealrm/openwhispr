@@ -309,6 +309,14 @@ registerProcessor("pcm-streaming-processor", PCMStreamingProcessor);
 
       try {
         this._silenceCtx = new AudioContext();
+        // Resume immediately — AudioContext auto-suspends when the window is
+        // backgrounded (e.g. recording started via global hotkey while another
+        // app is focused). A suspended context returns all-silence data from
+        // getByteTimeDomainData, which causes the speech gate to skip the
+        // transcription even though audio was actually captured.
+        if (this._silenceCtx.state === "suspended") {
+          this._silenceCtx.resume().catch(() => {});
+        }
         this._silenceAnalyser = this._silenceCtx.createAnalyser();
         this._silenceAnalyser.fftSize = 2048;
         const sourceNode = this._silenceCtx.createMediaStreamSource(micStream);
@@ -316,6 +324,12 @@ registerProcessor("pcm-streaming-processor", PCMStreamingProcessor);
         this._localSpeechGateState = createLocalSpeechGateState();
         const dataArray = new Uint8Array(this._silenceAnalyser.fftSize);
         this._silenceInterval = setInterval(() => {
+          // Skip this window if the context is still suspended — don't record
+          // fake silence readings that would trip the speech gate.
+          if (this._silenceCtx?.state !== "running") {
+            this._silenceCtx?.resume().catch(() => {});
+            return;
+          }
           this._silenceAnalyser.getByteTimeDomainData(dataArray);
           let sum = 0;
           let peak = 0;
